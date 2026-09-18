@@ -10,7 +10,7 @@ resource "cloudflare_ruleset" "this" {
       action = rule.action
       action_parameters = rule.action_parameters == null ? null : {
         # http_config_settings
-        polish = rule.action_parameters.polish
+        polish = rule.action == "set_config" ? rule.action_parameters.polish : null
 
         # http_log_custom_fields
         cookie_fields   = rule.action_parameters.cookie_fields
@@ -123,11 +123,11 @@ resource "cloudflare_ruleset" "this" {
         score_response_header_name = rule.ratelimit.score_response_header_name
       }
 
-      ref = join("", compact([var.ref_prefix, coalesce(rule.ref, random_uuid.rule_ref[rule.description].result)]))
+      ref = join("", compact([var.ref_prefix, coalesce(rule.ref, try(random_uuid.rule_ref[rule.description].result, null))]))
     }
   ]
 }
 
 resource "random_uuid" "rule_ref" {
-  for_each = toset([for r in var.rules : r.description])
+  for_each = toset([for rule in var.rules : rule.description if rule.ref == null])
 }
