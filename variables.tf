@@ -204,10 +204,17 @@ variable "rules" {
     error_message = "action_parameters.from_value.target_url.expression cannot be empty"
   }
 
-  # Ensure we specify only allowed action_parameters.polish
+  # Ensure we specify only allowed action_parameters.polish, and only for set_config.
   validation {
-    condition     = alltrue([for rule in var.rules : try(rule.action_parameters.polish == null || contains(["off", "lossless", "lossy", "webp"], rule.action_parameters.polish), true)])
-    error_message = "Only the following polish elements are allowed off, lossless, lossy, webp"
+    condition = alltrue([
+      for rule in var.rules : try(
+        rule.action == "set_config"
+        ? (rule.action_parameters.polish == null || contains(["off", "lossless", "lossy", "webp"], rule.action_parameters.polish))
+        : rule.action_parameters.polish == null,
+        true
+      )
+    ])
+    error_message = "action_parameters.polish is only valid for set_config and must be one of off, lossless, lossy, webp"
   }
 
   # Ensure that either query, path or headers are set for rewrite rules
